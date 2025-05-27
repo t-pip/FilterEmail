@@ -21,38 +21,35 @@ function setLabelName(z_contact) {
     updateGmailFilterForContact(out_contactName, out_labelName);
 }
 
-function updateGmailFilterForContact(inp_Contact, inp_Label) {
-  const contactName = inp_Contact;
-  const labelName = inp_Label;
+function updateGmailFilterForContact(email, labelName) {
   const response = People.People.searchContacts({
-    query: contactName,
+    query: email,
     readMask: "emailAddresses"
   });
 
   const people = response.results || [];
 
   if (people.length === 0) {
-    Logger.log("No contacts found.");
+    Logger.log(`No contacts found for: ${email}`);
     return;
   }
 
   const emails = [];
   people.forEach(person => {
     const emailAddresses = person.person.emailAddresses || [];
-    emailAddresses.forEach(email => {
-      emails.push(email.value);
+    emailAddresses.forEach(e => {
+      emails.push(e.value);
     });
   });
 
   if (emails.length === 0) {
-    Logger.log("No email addresses found.");
+    Logger.log(`No email addresses found for: ${email}`);
     return;
   }
 
   const filterFrom = emails.join(" OR ");
   const label = GmailApp.getUserLabelByName(labelName) || GmailApp.createLabel(labelName);
-  const threads = GmailApp.search(`from:(${filterFrom}) in:(inbox) is:(unread)`); /*Applies to only unreaad mails in the Inbox*/ 
-  /*const threads = GmailApp.search(`from:(${filterFrom})`);  - Applies to all emails*/
+  const threads = GmailApp.search(`from:(${filterFrom}) in:(inbox) is:(unread)`);
 
   threads.forEach(thread => {
     thread.addLabel(label);
@@ -60,5 +57,5 @@ function updateGmailFilterForContact(inp_Contact, inp_Label) {
     thread.moveToArchive();
   });
 
-  Logger.log(`Processed ${threads.length} threads from ${contactName}`);
+  Logger.log(`Processed ${threads.length} threads from ${email}`);
 }
